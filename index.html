@@ -1,0 +1,856 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Feliz Día del Hombre • Para Luchito</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Cinzel, Cormorant Garamond & Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Tone.js para melodía Jazz/Saxo de respaldo si aún no se sube musica.mp3 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+
+    <style>
+        :root {
+            --gold-primary: #d4af37;
+            --gold-light: #f3e5ab;
+            --navy-deep: #060a14;
+            --paper-bg: #fdfbf7;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: radial-gradient(circle at 50% 20%, #172542 0%, #090e1c 58%, #04060c 100%);
+            color: #f8fafc;
+            min-height: 100vh;
+            overflow-x: hidden;
+            margin: 0;
+        }
+
+        .font-cinzel { font-family: 'Cinzel', serif; }
+        .font-cormorant { font-family: 'Cormorant Garamond', serif; }
+
+        /* Canvas de partículas y estrellas */
+        #particleCanvas {
+            position: fixed;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* --- SOBRE 3D --- */
+        .envelope-wrapper {
+            perspective: 1200px;
+            transition: transform 0.7s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.6s ease;
+        }
+
+        .envelope-card {
+            position: relative;
+            width: min(92vw, 440px);
+            height: 295px;
+            background: linear-gradient(145deg, #16233d 0%, #0c1426 100%);
+            border-radius: 16px;
+            box-shadow: 0 28px 65px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(212, 175, 55, 0.4);
+            cursor: pointer;
+            transition: transform 0.4s ease, box-shadow 0.4s ease;
+            overflow: hidden;
+        }
+
+        .envelope-card:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 34px 75px rgba(0, 0, 0, 0.9), 0 0 28px rgba(212, 175, 55, 0.28);
+        }
+
+        .envelope-flap {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 158px;
+            background: linear-gradient(180deg, #1f3154 0%, #131f38 100%);
+            clip-path: polygon(0 0, 100% 0, 50% 100%);
+            transform-origin: top center;
+            transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 3;
+            border-top: 2px solid rgba(212, 175, 55, 0.55);
+        }
+
+        .envelope-card.is-open .envelope-flap {
+            transform: rotateX(180deg);
+            z-index: 1;
+        }
+
+        .envelope-sides {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(255,255,255,0.04) 0%, transparent 50%, rgba(0,0,0,0.35) 100%);
+            clip-path: polygon(0 0, 50% 52%, 100% 0, 100% 100%, 0 100%);
+            z-index: 2;
+            border-top: 1px solid rgba(212, 175, 55, 0.25);
+        }
+
+        .wax-seal {
+            position: absolute;
+            top: 124px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 70px;
+            height: 70px;
+            border-radius: 9999px;
+            background: radial-gradient(circle at 30% 30%, #f8e48e, #d4af37 55%, #8a5f14 100%);
+            box-shadow: 0 8px 22px rgba(0, 0, 0, 0.7), inset 0 2px 5px rgba(255, 255, 255, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 4;
+            transition: transform 0.35s ease, opacity 0.4s ease;
+            border: 2px solid rgba(255, 248, 220, 0.5);
+        }
+
+        .envelope-card:hover .wax-seal {
+            transform: translateX(-50%) scale(1.08);
+        }
+
+        .envelope-card.is-open .wax-seal {
+            opacity: 0;
+            transform: translateX(-50%) scale(0.7);
+        }
+
+        /* --- PAPEL DE CARTA --- */
+        .letter-paper {
+            background-color: var(--paper-bg);
+            background-image:
+                radial-gradient(rgba(184, 134, 11, 0.08) 1px, transparent 0),
+                linear-gradient(to bottom, #ffffff 0%, #fbf6ea 100%);
+            background-size: 22px 22px, 100% 100%;
+            color: #1e293b;
+            box-shadow: 0 28px 70px rgba(0, 0, 0, 0.88), 0 0 0 1px rgba(212, 175, 55, 0.45);
+            animation: revealLetter 0.85s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+        }
+
+        @keyframes revealLetter {
+            0% { opacity: 0; transform: translateY(35px) scale(0.96); }
+            100% { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        /* --- DISCO DE VINILO GIRATORIO --- */
+        @keyframes spinVinyl {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .vinyl-record {
+            background: repeating-radial-gradient(
+                circle at center,
+                #111827 0px,
+                #111827 3px,
+                #1f2937 4px,
+                #0f172a 6px
+            );
+            box-shadow: 0 8px 20px rgba(0,0,0,0.35), inset 0 0 0 2px rgba(212, 175, 55, 0.3);
+        }
+
+        .vinyl-spinning {
+            animation: spinVinyl 6s linear infinite;
+        }
+
+        /* --- MARCO POLAROID --- */
+        .polaroid-frame {
+            background: #ffffff;
+            padding: 12px 12px 24px 12px;
+            box-shadow: 0 14px 32px rgba(15, 23, 42, 0.18), 0 0 0 1px rgba(212, 175, 55, 0.35);
+            transform: rotate(-1.5deg);
+            transition: transform 0.35s ease, box-shadow 0.35s ease;
+        }
+
+        .polaroid-frame:hover {
+            transform: rotate(0deg) scale(1.02);
+            box-shadow: 0 18px 38px rgba(15, 23, 42, 0.24), 0 0 0 1px rgba(212, 175, 55, 0.55);
+        }
+
+        /* --- TARJETAS GIRATORIAS 3D (FLIP CARDS) --- */
+        .flip-card {
+            perspective: 1000px;
+            height: 145px;
+            cursor: pointer;
+        }
+
+        .flip-card-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            transition: transform 0.65s cubic-bezier(0.4, 0.2, 0.2, 1);
+            transform-style: preserve-3d;
+        }
+
+        .flip-card.is-flipped .flip-card-inner {
+            transform: rotateY(180deg);
+        }
+
+        .flip-card-front, .flip-card-back {
+            position: absolute;
+            inset: 0;
+            backface-visibility: hidden;
+            border-radius: 14px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 14px;
+            text-align: center;
+        }
+
+        .flip-card-front {
+            background: linear-gradient(145deg, #fffdf9 0%, #f5ebd6 100%);
+            border: 1px solid rgba(180, 130, 30, 0.28);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+
+        .flip-card-back {
+            background: linear-gradient(145deg, #16233d 0%, #0c1426 100%);
+            color: #fef3c7;
+            transform: rotateY(180deg);
+            border: 1px solid rgba(212, 175, 55, 0.5);
+            box-shadow: 0 8px 20px rgba(15, 23, 42, 0.25);
+        }
+
+        /* --- SCRATCH CARD (RASPA Y GANA) --- */
+        #scratchCanvas {
+            touch-action: none;
+            cursor: crosshair;
+        }
+
+        /* Scrollbar elegante */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #060a14; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 9999px; }
+    </style>
+</head>
+<body class="relative flex flex-col min-h-screen selection:bg-amber-200 selection:text-slate-900">
+
+    <!-- Audio Element apuntando a tu archivo local musica.mp3 para GitHub -->
+    <audio id="bgAudio" src="musica.mp3" loop preload="auto"></audio>
+
+    <!-- Fondo animado de estrellas y corazones -->
+    <canvas id="particleCanvas"></canvas>
+
+    <!-- Barra Superior Flotante -->
+    <header class="relative z-20 w-full max-w-4xl mx-auto px-4 pt-5 pb-2 flex items-center justify-between">
+        <div class="flex items-center gap-2 text-amber-300/90">
+            <span class="text-base">🐯</span>
+            <span class="text-xs uppercase tracking-[0.2em] font-semibold">Luchito & Korisita</span>
+        </div>
+
+        <div class="flex items-center gap-2">
+            <!-- Control de Música -->
+            <button id="headerMusicBtn" onclick="toggleAudio()" class="inline-flex items-center gap-2 px-3.5 py-2 rounded-full bg-slate-900/85 hover:bg-slate-800 border border-amber-400/40 text-amber-200 text-xs font-medium backdrop-blur-md transition-all shadow-lg cursor-pointer">
+                <i id="headerMusicIcon" data-lucide="volume-x" class="w-3.5 h-3.5 text-amber-400"></i>
+                <span id="headerMusicText">Nuestra Canción</span>
+            </button>
+
+            <!-- Botón de Ayuda / Subida a GitHub -->
+            <button onclick="openSetupModal()" class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-amber-500/20 hover:bg-amber-500/30 border border-amber-400/40 text-amber-200 text-xs font-medium backdrop-blur-md transition-all shadow-lg cursor-pointer">
+                <i data-lucide="sliders-horizontal" class="w-3.5 h-3.5 text-amber-300"></i>
+                <span class="hidden sm:inline">Archivos / Editar</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Contenedor Principal -->
+    <main class="relative z-10 flex-1 flex flex-col items-center justify-center px-4 py-6 sm:py-10">
+
+        <!-- ETAPA 1: SOBRE INTERACTIVO -->
+        <section id="envelopeStage" class="envelope-wrapper flex flex-col items-center text-center">
+            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-400/10 border border-amber-400/25 text-amber-300 text-[11px] uppercase tracking-[0.25em] mb-3 font-medium">
+                <span>19 de Noviembre • Día del Hombre</span>
+            </div>
+            <h1 class="font-cinzel text-2xl sm:text-4xl text-white font-bold tracking-wide mb-8">
+                Una sorpresa para ti, mi amor
+            </h1>
+
+            <!-- Sobre -->
+            <div id="envelopeCard" class="envelope-card" onclick="openEnvelope()">
+                <div class="envelope-flap"></div>
+                <div class="envelope-sides"></div>
+
+                <!-- Sello de Lacre Dorado -->
+                <div class="wax-seal" title="Toca para abrir">
+                    <i data-lucide="heart" class="w-7 h-7 text-amber-950 fill-amber-950/85"></i>
+                </div>
+
+                <!-- Destinatario -->
+                <div class="absolute bottom-6 inset-x-0 z-10 flex flex-col items-center px-4">
+                    <span class="font-cormorant italic text-amber-100/85 text-lg">Para el hombre que roba mi corazón,</span>
+                    <span class="font-cinzel text-amber-300 text-lg tracking-[0.22em] uppercase font-bold mt-1">
+                        Luchito 🐯
+                    </span>
+                </div>
+            </div>
+
+            <button onclick="openEnvelope()" class="mt-7 inline-flex items-center gap-2 text-xs uppercase tracking-[0.22em] text-amber-300/95 hover:text-amber-200 transition-colors cursor-pointer animate-pulse font-medium">
+                <span>Toca el sello dorado para abrir</span>
+                <i data-lucide="sparkles" class="w-4 h-4"></i>
+            </button>
+        </section>
+
+        <!-- ETAPA 2: CARTA INTERACTIVA COMPLETA -->
+        <article id="letterStage" class="hidden w-full max-w-2xl letter-paper rounded-2xl p-5 sm:p-9 md:p-11 relative">
+            <div class="border border-amber-700/25 rounded-xl p-4 sm:p-8 relative">
+
+                <!-- Botón Cerrar Carta -->
+                <button onclick="closeEnvelope()" title="Volver al sobre" class="absolute top-3 right-3 p-2 rounded-full text-slate-400 hover:text-slate-700 hover:bg-amber-900/5 transition-colors cursor-pointer">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+
+                <!-- Encabezado -->
+                <div class="text-center mb-6">
+                    <div class="inline-flex items-center justify-center w-12 h-12 rounded-full bg-amber-900/10 text-amber-800 mb-3 shadow-inner">
+                        <i data-lucide="crown" class="w-6 h-6"></i>
+                    </div>
+                    <p class="text-xs uppercase tracking-[0.26em] text-amber-800/85 font-semibold mb-1">
+                        Feliz Día del Hombre
+                    </p>
+                    <h2 class="font-cinzel text-2xl sm:text-4xl font-bold text-slate-900 tracking-tight">
+                        Para Ti, Mi Luchito
+                    </h2>
+                </div>
+
+                <!-- MINI REPRODUCTOR DE VINILO INTEGRADO -->
+                <div class="mb-8 bg-slate-900 text-amber-100 rounded-2xl p-3.5 sm:p-4 shadow-xl border border-amber-500/30 flex items-center justify-between gap-3">
+                    <div class="flex items-center gap-3.5 min-w-0">
+                        <!-- Disco de Vinilo -->
+                        <div id="vinylDisc" class="vinyl-record w-12 h-12 sm:w-14 sm:h-14 rounded-full flex-shrink-0 flex items-center justify-center relative">
+                            <div class="w-5 h-5 rounded-full bg-gradient-to-tr from-amber-500 to-amber-200 flex items-center justify-center">
+                                <div class="w-1.5 h-1.5 rounded-full bg-slate-950"></div>
+                            </div>
+                        </div>
+                        <div class="min-w-0">
+                            <p class="text-[10px] uppercase tracking-[0.2em] text-amber-400 font-semibold">Melodía para ti</p>
+                            <p class="font-cinzel text-sm sm:text-base font-bold text-white truncate">Nuestro Saxofón Romántico</p>
+                            <p id="audioStatusLabel" class="text-[11px] text-slate-400 truncate">Toca play para escuchar mientras lees</p>
+                        </div>
+                    </div>
+
+                    <button onclick="toggleAudio()" id="cardPlayBtn" class="w-11 h-11 rounded-full bg-amber-400 hover:bg-amber-300 text-slate-950 flex items-center justify-center flex-shrink-0 shadow-lg transition-transform active:scale-95 cursor-pointer">
+                        <i id="cardPlayIcon" data-lucide="play" class="w-5 h-5 fill-slate-950 ml-0.5"></i>
+                    </button>
+                </div>
+
+                <!-- FOTO POLAROID (Carga foto.jpeg automáticamente) -->
+                <div class="flex justify-center mb-8">
+                    <div class="polaroid-frame rounded-md max-w-[280px] sm:max-w-[320px] w-full relative">
+                        <!-- Cinta adhesiva decorativa superior -->
+                        <div class="w-20 h-5 bg-amber-200/75 backdrop-blur-xs absolute -top-2.5 left-1/2 -translate-x-1/2 rotate-1 shadow-xs"></div>
+
+                        <div class="relative aspect-[4/3] w-full overflow-hidden bg-slate-900 rounded-sm">
+                            <img id="couplePhoto"
+                                 src="foto.jpeg"
+                                 onerror="handlePhotoFallback(this)"
+                                 alt="Luchito y Korisita"
+                                 class="w-full h-full object-cover">
+                        </div>
+                        <div class="mt-3 text-center">
+                            <p id="photoCaptionText" class="font-cormorant italic font-semibold text-slate-800 text-lg sm:text-xl leading-tight">
+                                Tú, yo y nuestro tigrecito 🐯❤️
+                            </p>
+                            <p class="text-[10px] uppercase tracking-[0.2em] text-amber-800/70 mt-1">
+                                Un recuerdo guardado en mi corazón
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CARTA DE AMOR -->
+                <div id="letterContent" class="font-cormorant text-lg sm:text-xl md:text-[22px] leading-relaxed text-slate-800 space-y-5 text-justify sm:text-left">
+                    <p>
+                        Mi Luchito hermoso, hoy en el Día del Hombre quiero regalarte estas palabras para recordarte lo inmensamente especial que eres en mi vida. Cada vez que veo nuestra foto juntos, con esa sonrisa que me contagias y nuestro pequeño tigrecito, confirmo que a tu lado encontré mi lugar favorito en el mundo.
+                    </p>
+                    <p>
+                        Admiro profundamente el hombre maravilloso que eres: tu nobleza, la paz que me transmites con un abrazo, tu forma tan bonita de hacerme reír y la fuerza con la que luchas por todo lo que te propones. Tenerte como mi compañero es el regalo más lindo que me ha dado la vida.
+                    </p>
+                    <p>
+                        Gracias por cada momento compartido, por cuidarme y por hacer que cada día a tu lado se sienta único. Hoy celebro tu vida, tu esencia y la dicha infinita de poder llamarme tu <strong class="text-amber-900 font-semibold">Korisita</strong>.
+                    </p>
+                </div>
+
+                <!-- EXPERIENCIA INTERACTIVA 1: 3 TARJETAS GIRATORIAS (FLIP CARDS) -->
+                <div class="mt-10 pt-7 border-t border-amber-900/15">
+                    <div class="text-center mb-5">
+                        <span class="text-[11px] uppercase tracking-[0.22em] text-amber-800 font-semibold">
+                            ✨ Toca cada tarjeta para girarla ✨
+                        </span>
+                        <h3 class="font-cinzel text-lg sm:text-xl font-bold text-slate-900 mt-1">
+                            Lo que más admiro de ti
+                        </h3>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+                        <!-- Card 1 -->
+                        <div class="flip-card" onclick="flipCard(this)">
+                            <div class="flip-card-inner">
+                                <div class="flip-card-front">
+                                    <div class="w-9 h-9 rounded-full bg-amber-900/10 flex items-center justify-center text-amber-800 mb-2">
+                                        <i data-lucide="heart-handshake" class="w-5 h-5"></i>
+                                    </div>
+                                    <span class="font-cinzel text-xs font-bold text-slate-900 uppercase tracking-wider">Tu Corazón</span>
+                                    <span class="text-[11px] text-amber-800/80 mt-1">Toca para descubrir</span>
+                                </div>
+                                <div class="flip-card-back">
+                                    <p class="font-cormorant italic text-base leading-snug">
+                                        "Tienes la nobleza y la ternura más bonitas que he conocido. Gracias por quererme así."
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Card 2 -->
+                        <div class="flip-card" onclick="flipCard(this)">
+                            <div class="flip-card-inner">
+                                <div class="flip-card-front">
+                                    <div class="w-9 h-9 rounded-full bg-amber-900/10 flex items-center justify-center text-amber-800 mb-2">
+                                        <i data-lucide="shield" class="w-5 h-5"></i>
+                                    </div>
+                                    <span class="font-cinzel text-xs font-bold text-slate-900 uppercase tracking-wider">Tu Fortaleza</span>
+                                    <span class="text-[11px] text-amber-800/80 mt-1">Toca para descubrir</span>
+                                </div>
+                                <div class="flip-card-back">
+                                    <p class="font-cormorant italic text-base leading-snug">
+                                        "Me llena de orgullo ver cómo te esfuerzas cada día. Siempre estaré aquí para apoyarte."
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Card 3 -->
+                        <div class="flip-card" onclick="flipCard(this)">
+                            <div class="flip-card-inner">
+                                <div class="flip-card-front">
+                                    <div class="w-9 h-9 rounded-full bg-amber-900/10 flex items-center justify-center text-amber-800 mb-2">
+                                        <i data-lucide="sparkles" class="w-5 h-5"></i>
+                                    </div>
+                                    <span class="font-cinzel text-xs font-bold text-slate-900 uppercase tracking-wider">Nuestros Momentos</span>
+                                    <span class="text-[11px] text-amber-800/80 mt-1">Toca para descubrir</span>
+                                </div>
+                                <div class="flip-card-back">
+                                    <p class="font-cormorant italic text-base leading-snug">
+                                        "Contigo hasta el plan más sencillo se convierte en mi recuerdo favorito. Te amo, Luchito."
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- EXPERIENCIA INTERACTIVA 2: CUPÓN RASPA Y GANA -->
+                <div class="mt-9 pt-7 border-t border-amber-900/15">
+                    <div class="text-center mb-4">
+                        <span class="text-[11px] uppercase tracking-[0.22em] text-amber-800 font-semibold">
+                            🎁 Regalo Sorpresa • Pasa tu dedo para raspar
+                        </span>
+                        <h3 class="font-cinzel text-lg sm:text-xl font-bold text-slate-900 mt-1">
+                            Vale Especial por tu Día
+                        </h3>
+                    </div>
+
+                    <div class="relative w-full max-w-md mx-auto h-32 rounded-2xl overflow-hidden shadow-inner border-2 border-dashed border-amber-600/40 bg-gradient-to-r from-amber-50 via-yellow-50 to-amber-100 flex flex-col items-center justify-center p-4 text-center select-none">
+                        <!-- Premio oculto debajo -->
+                        <span class="text-xs uppercase tracking-widest text-amber-800 font-bold mb-1">🎟️ Vale Válido Por:</span>
+                        <p id="couponPrizeText" class="font-cinzel text-base sm:text-lg font-extrabold text-slate-900">
+                            Una cita romántica, muchos besitos y tu comida favorita 🍔❤️
+                        </p>
+                        <span class="text-[11px] text-slate-600 mt-1">Canjeable cuando tú quieras con tu Korisita</span>
+
+                        <!-- Capa dorada raspable -->
+                        <canvas id="scratchCanvas" class="absolute inset-0 w-full h-full z-10"></canvas>
+                    </div>
+                </div>
+
+                <!-- FIRMA Y BOTÓN DE LLUVIA DE AMOR -->
+                <div class="mt-9 pt-6 border-t border-amber-900/15 flex flex-col sm:flex-row sm:items-end justify-between gap-5">
+                    <div>
+                        <p class="font-cormorant italic text-xl text-slate-700">Con todo mi amor, hoy y siempre,</p>
+                        <p class="font-cinzel text-xl font-bold text-amber-900 mt-1">
+                            Tu Korisita ❤️
+                        </p>
+                    </div>
+
+                    <button onclick="triggerLoveExplosion()" class="self-start sm:self-end inline-flex items-center gap-2 bg-slate-900 hover:bg-slate-800 text-amber-200 px-5 py-3 rounded-full text-xs uppercase tracking-widest font-semibold transition-all shadow-lg hover:shadow-xl active:scale-95 cursor-pointer">
+                        <span>Mandar Besito a Korisita</span>
+                        <span>💋</span>
+                    </button>
+                </div>
+
+            </div>
+        </article>
+    </main>
+
+    <!-- MODAL PARA PREVISUALIZAR FOTO/MÚSICA ANTES DE SUBIR A GITHUB -->
+    <div id="setupModal" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-amber-400/35 rounded-2xl w-full max-w-lg p-6 shadow-2xl text-slate-100">
+            <div class="flex items-center justify-between pb-3 mb-4 border-b border-slate-800">
+                <h3 class="font-cinzel text-lg font-bold text-amber-300">Preparar para GitHub</h3>
+                <button onclick="closeSetupModal()" class="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 cursor-pointer">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <div class="space-y-4 text-xs sm:text-sm text-slate-300 max-h-[70vh] overflow-y-auto pr-1">
+                <div class="p-3.5 rounded-xl bg-amber-500/10 border border-amber-400/25 text-amber-100 leading-relaxed">
+                    <p class="font-semibold text-amber-300 mb-1">📁 Cómo subirlo a tu repositorio de GitHub:</p>
+                    <p>Guarda este archivo como <code class="bg-slate-800 px-1.5 py-0.5 rounded text-amber-300">index.html</code> y sube en la misma carpeta tu foto nombrada <code class="bg-slate-800 px-1.5 py-0.5 rounded text-amber-300">foto.jpeg</code> y tu canción nombrada <code class="bg-slate-800 px-1.5 py-0.5 rounded text-amber-300">musica.mp3</code>. ¡La página los cargará automáticamente!</p>
+                </div>
+
+                <div>
+                    <label class="block text-slate-200 font-medium mb-1">Probar foto aquí ahora mismo:</label>
+                    <input type="file" accept="image/*" onchange="loadLocalPreviewPhoto(event)" class="w-full text-xs text-slate-300 file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:font-semibold file:bg-amber-500/20 file:text-amber-300 bg-slate-800 border border-slate-700 rounded-xl p-1.5 cursor-pointer">
+                </div>
+
+                <div>
+                    <label class="block text-slate-200 font-medium mb-1">Probar canción aquí ahora mismo:</label>
+                    <input type="file" accept="audio/*" onchange="loadLocalPreviewAudio(event)" class="w-full text-xs text-slate-300 file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:font-semibold file:bg-amber-500/20 file:text-amber-300 bg-slate-800 border border-slate-700 rounded-xl p-1.5 cursor-pointer">
+                </div>
+
+                <div>
+                    <label class="block text-slate-200 font-medium mb-1">Editar texto del vale sorpresa:</label>
+                    <input type="text" id="editCouponInput" value="Una cita romántica, muchos besitos y tu comida favorita 🍔❤️" class="w-full bg-slate-800 border border-slate-700 focus:border-amber-400 rounded-xl px-3 py-2 text-white outline-none">
+                </div>
+            </div>
+
+            <div class="mt-5 flex justify-end gap-2.5">
+                <button onclick="applyQuickEdits()" class="px-5 py-2.5 rounded-xl text-xs font-semibold bg-amber-500 hover:bg-amber-400 text-slate-950 transition-colors cursor-pointer">
+                    Listo
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- TOAST NOTIFICACIÓN -->
+    <div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-slate-900/95 border border-amber-400/45 text-amber-200 px-5 py-2.5 rounded-full text-xs font-medium shadow-2xl opacity-0 pointer-events-none transition-opacity duration-300 text-center max-w-[90vw]">
+        Mensaje
+    </div>
+
+    <script>
+        lucide.createIcons();
+
+        // --- 1. FONDO DE ESTRELLAS Y PARTÍCULAS ---
+        const pCanvas = document.getElementById('particleCanvas');
+        const pCtx = pCanvas.getContext('2d');
+        let stars = [];
+        let bursts = [];
+
+        function resizeParticleCanvas() {
+            pCanvas.width = window.innerWidth;
+            pCanvas.height = window.innerHeight;
+            stars = Array.from({ length: 80 }, () => ({
+                x: Math.random() * pCanvas.width,
+                y: Math.random() * pCanvas.height,
+                r: Math.random() * 1.5 + 0.4,
+                alpha: Math.random(),
+                speed: Math.random() * 0.015 + 0.005
+            }));
+        }
+        window.addEventListener('resize', resizeParticleCanvas);
+        resizeParticleCanvas();
+
+        function animateParticles() {
+            pCtx.clearRect(0, 0, pCanvas.width, pCanvas.height);
+
+            for (const s of stars) {
+                s.alpha += s.speed;
+                if (s.alpha > 1 || s.alpha < 0.15) s.speed *= -1;
+                pCtx.beginPath();
+                pCtx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+                pCtx.fillStyle = `rgba(243, 229, 171, ${s.alpha * 0.65})`;
+                pCtx.fill();
+            }
+
+            for (let i = bursts.length - 1; i >= 0; i--) {
+                const b = bursts[i];
+                b.y -= b.vy;
+                b.x += Math.sin(b.y * 0.03) * 0.8;
+                b.alpha -= 0.0065;
+                if (b.alpha <= 0) {
+                    bursts.splice(i, 1);
+                    continue;
+                }
+                pCtx.save();
+                pCtx.globalAlpha = b.alpha;
+                pCtx.font = `${b.size}px serif`;
+                pCtx.fillText(b.emoji, b.x, b.y);
+                pCtx.restore();
+            }
+
+            requestAnimationFrame(animateParticles);
+        }
+        animateParticles();
+
+        function spawnEmojis(count = 22, customList = ['❤️', '🐯', '✨', '💛']) {
+            for (let i = 0; i < count; i++) {
+                bursts.push({
+                    x: Math.random() * pCanvas.width,
+                    y: pCanvas.height + Math.random() * 60,
+                    vy: Math.random() * 2.6 + 1.6,
+                    size: Math.random() * 16 + 15,
+                    alpha: 1,
+                    emoji: customList[Math.floor(Math.random() * customList.length)]
+                });
+            }
+        }
+
+        // --- 2. SISTEMA DE AUDIO DUAL (MP3 LOCAL + RESPALDO JAZZ SAXO) ---
+        const bgAudio = document.getElementById('bgAudio');
+        let isAudioPlaying = false;
+        let usingFallbackSynth = false;
+        let jazzLoop, saxSynth, pianoSynth;
+
+        function updateAudioUI(playing, labelText) {
+            isAudioPlaying = playing;
+            const hIcon = document.getElementById('headerMusicIcon');
+            const hText = document.getElementById('headerMusicText');
+            const cIcon = document.getElementById('cardPlayIcon');
+            const vinyl = document.getElementById('vinylDisc');
+            const statusLabel = document.getElementById('audioStatusLabel');
+
+            if (playing) {
+                hIcon.setAttribute('data-lucide', 'volume-2');
+                hText.textContent = 'Sonando';
+                cIcon.setAttribute('data-lucide', 'pause');
+                vinyl.classList.add('vinyl-spinning');
+                statusLabel.textContent = labelText || 'Reproduciendo nuestra canción...';
+            } else {
+                hIcon.setAttribute('data-lucide', 'volume-x');
+                hText.textContent = 'Nuestra Canción';
+                cIcon.setAttribute('data-lucide', 'play');
+                vinyl.classList.remove('vinyl-spinning');
+                statusLabel.textContent = 'En pausa • Toca play para continuar';
+            }
+            lucide.createIcons();
+        }
+
+        async function startFallbackJazz() {
+            await Tone.start();
+            if (!saxSynth) {
+                const reverb = new Tone.Reverb({ decay: 3.5, wet: 0.4 }).toDestination();
+                pianoSynth = new Tone.PolySynth(Tone.Synth, {
+                    oscillator: { type: "sine" },
+                    envelope: { attack: 0.2, decay: 0.8, sustain: 0.4, release: 2.0 }
+                }).connect(reverb);
+                pianoSynth.volume.value = -16;
+
+                saxSynth = new Tone.Synth({
+                    oscillator: { type: "triangle" },
+                    envelope: { attack: 0.12, decay: 0.6, sustain: 0.45, release: 1.5 }
+                }).connect(reverb);
+                saxSynth.volume.value = -10;
+
+                const bars = [
+                    { chord: ["D3", "F3", "A3", "C4"], notes: ["A4", "G4", "F4", "E4"] },
+                    { chord: ["G3", "B3", "D4", "F4"], notes: ["G4", "F4", "E4", "D4"] },
+                    { chord: ["C3", "E3", "G3", "B3"], notes: ["E4", "G4", "B4", "A4"] },
+                    { chord: ["A3", "C4", "E4", "G4"], notes: ["G4", "E4", "D4", "C4"] }
+                ];
+                let idx = 0;
+                jazzLoop = new Tone.Loop(time => {
+                    const bar = bars[idx % bars.length];
+                    pianoSynth.triggerAttackRelease(bar.chord, "2m", time);
+                    bar.notes.forEach((n, i) => {
+                        saxSynth.triggerAttackRelease(n, "4n", time + i * 0.55);
+                    });
+                    idx++;
+                }, "2.4s");
+            }
+            Tone.Transport.start();
+            jazzLoop.start(0);
+            usingFallbackSynth = true;
+            updateAudioUI(true, 'Melodía romántica activa ♪');
+        }
+
+        async function toggleAudio(forcePlay = false) {
+            if (!isAudioPlaying || forcePlay) {
+                if (isAudioPlaying && forcePlay) return;
+                try {
+                    await bgAudio.play();
+                    usingFallbackSynth = false;
+                    updateAudioUI(true, 'Reproduciendo nuestra música ♪');
+                } catch (err) {
+                    // Si musica.mp3 aún no está en el servidor (vista previa), usa la melodía jazz suave
+                    await startFallbackJazz();
+                }
+            } else {
+                if (usingFallbackSynth) {
+                    Tone.Transport.pause();
+                } else {
+                    bgAudio.pause();
+                }
+                updateAudioUI(false);
+            }
+        }
+
+        // --- 3. RESPUESTA SI FOTO.JPEG NO ESTÁ EN VISTA PREVIA ---
+        function handlePhotoFallback(img) {
+            img.onerror = null;
+            img.src = "https://placehold.co/640x480/16233d/f3e5ab?text=Luchito+%26+Korisita+%F0%9F%90%AF%E2%9D%A4%EF%B8%8F";
+        }
+
+        // --- 4. ABRIR Y CERRAR EL SOBRE ---
+        function openEnvelope() {
+            const card = document.getElementById('envelopeCard');
+            const envelopeStage = document.getElementById('envelopeStage');
+            const letterStage = document.getElementById('letterStage');
+
+            card.classList.add('is-open');
+            toggleAudio(true);
+
+            setTimeout(() => {
+                envelopeStage.classList.add('hidden');
+                letterStage.classList.remove('hidden');
+                initScratchCard();
+                spawnEmojis(24);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }, 650);
+        }
+
+        function closeEnvelope() {
+            const card = document.getElementById('envelopeCard');
+            const envelopeStage = document.getElementById('envelopeStage');
+            const letterStage = document.getElementById('letterStage');
+
+            letterStage.classList.add('hidden');
+            envelopeStage.classList.remove('hidden');
+            card.classList.remove('is-open');
+        }
+
+        // --- 5. INTERACCIONES DE LA CARTA ---
+        function flipCard(cardEl) {
+            cardEl.classList.toggle('is-flipped');
+            spawnEmojis(6, ['✨', '💛']);
+        }
+
+        function triggerLoveExplosion() {
+            spawnEmojis(32, ['💋', '❤️', '🐯', '🥰', '✨']);
+            showToast("¡Besito enviado de Luchito para su Korisita! 💋❤️");
+        }
+
+        // --- 6. TARJETA RASPA Y GANA (CANVAS) ---
+        let scratchInitialized = false;
+        function initScratchCard() {
+            if (scratchInitialized) return;
+            const canvas = document.getElementById('scratchCanvas');
+            const ctx = canvas.getContext('2d');
+            const rect = canvas.parentElement.getBoundingClientRect();
+
+            canvas.width = rect.width;
+            canvas.height = rect.height;
+
+            // Capa dorada metálica
+            const grad = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+            grad.addColorStop(0, '#d4af37');
+            grad.addColorStop(0.5, '#f3e5ab');
+            grad.addColorStop(1, '#b8860b');
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Texto sobre la capa raspable
+            ctx.fillStyle = '#422006';
+            ctx.font = 'bold 14px Cinzel, serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('✨ RASPA AQUÍ TU SORPRESA ✨', canvas.width / 2, canvas.height / 2);
+
+            let isDrawing = false;
+            let revealed = false;
+
+            function getPos(e) {
+                const r = canvas.getBoundingClientRect();
+                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+                return { x: clientX - r.left, y: clientY - r.top };
+            }
+
+            function scratch(e) {
+                if (!isDrawing) return;
+                e.preventDefault();
+                const pos = getPos(e);
+                ctx.globalCompositeOperation = 'destination-out';
+                ctx.beginPath();
+                ctx.arc(pos.x, pos.y, 20, 0, Math.PI * 2);
+                ctx.fill();
+
+                if (!revealed) {
+                    revealed = true;
+                    spawnEmojis(14, ['🎁', '❤️', '✨']);
+                }
+            }
+
+            canvas.addEventListener('mousedown', (e) => { isDrawing = true; scratch(e); });
+            canvas.addEventListener('mousemove', scratch);
+            window.addEventListener('mouseup', () => { isDrawing = false; });
+
+            canvas.addEventListener('touchstart', (e) => { isDrawing = true; scratch(e); }, { passive: false });
+            canvas.addEventListener('touchmove', scratch, { passive: false });
+            window.addEventListener('touchend', () => { isDrawing = false; });
+
+            scratchInitialized = true;
+        }
+
+        // --- 7. MODAL DE PREVISUALIZACIÓN RÁPIDA ---
+        function openSetupModal() {
+            document.getElementById('setupModal').classList.remove('hidden');
+        }
+
+        function closeSetupModal() {
+            document.getElementById('setupModal').classList.add('hidden');
+        }
+
+        function loadLocalPreviewPhoto(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                document.getElementById('couplePhoto').src = ev.target.result;
+                showToast("¡Foto cargada en la vista previa! 📸");
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function loadLocalPreviewAudio(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const url = URL.createObjectURL(file);
+            if (usingFallbackSynth) {
+                Tone.Transport.stop();
+                usingFallbackSynth = false;
+            }
+            bgAudio.src = url;
+            bgAudio.play();
+            updateAudioUI(true, 'Reproduciendo tu canción ♪');
+            showToast("¡Canción cargada y sonando! 🎶");
+        }
+
+        function applyQuickEdits() {
+            const newCoupon = document.getElementById('editCouponInput').value.trim();
+            if (newCoupon) {
+                document.getElementById('couponPrizeText').textContent = newCoupon;
+            }
+            closeSetupModal();
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            toast.textContent = msg;
+            toast.classList.remove('opacity-0');
+            clearTimeout(window.toastTimeout);
+            window.toastTimeout = setTimeout(() => {
+                toast.classList.add('opacity-0');
+            }, 3200);
+        }
+    </script>
+</body>
+</html>
